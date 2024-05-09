@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 cursive = "0.20.0"
+cursive_table_view = "0.14"
 reqwest = { version = "0.12.4", features = ["json"] }
 serde = { version = "1.0.201", features = ["derive"] }
 serde_json = "1.0"
