@@ -40,7 +40,7 @@ impl Container {
 
         // Use these variables in `unwrap_or`
         let command = self.command.as_ref().unwrap_or(&default_command);
-        let id = self.id.as_ref().map_or(&default_id, |i| {
+        let _id = self.id.as_ref().map_or(&default_id, |i| {
             short_id = i.clone();
             short_id.truncate(8);
             &short_id
