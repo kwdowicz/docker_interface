@@ -1,5 +1,6 @@
 use crate::actions::container::{fetch_containers, stop_container};
 use crate::models::container::Container;
+use crate::views::bars::update_status_bar;
 use cursive::traits::*;
 use cursive::{
     views::{Dialog, ResizedView, TextView},
@@ -7,6 +8,8 @@ use cursive::{
 };
 use cursive_table_view::{TableView, TableViewItem};
 use std::cmp::Ordering;
+
+use super::text::Status;
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub enum ContainerColumn {
@@ -40,10 +43,11 @@ impl TableViewItem<ContainerColumn> for Container {
 }
 
 pub fn update_containers_view(siv: &mut Cursive) {
+    update_status_bar(siv, Status::Refreshing);
     let mut container_rows = Vec::new();
-
     match fetch_containers() {
         Ok(containers) => {
+            update_status_bar(siv, Status::Ready);
             for container in containers {
                 container_rows.push(container);
             }
@@ -52,7 +56,9 @@ pub fn update_containers_view(siv: &mut Cursive) {
                 |table: &mut TableView<Container, ContainerColumn>| table.set_items(container_rows),
             );
         }
-        Err(e) => eprintln!("Failed to fetch containers: {}", e),
+        Err(_e) => {
+            update_status_bar(siv, Status::NoDocker);
+        },
     }
 }
 
