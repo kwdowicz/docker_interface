@@ -1,7 +1,7 @@
 extern crate cursive_table_view;
 
 use reqwest::blocking;
-use cursive::{align::HAlign, views::{Dialog, TextView}, CbSink, Cursive, CursiveRunnable};
+use cursive::{align::HAlign, event::Key, views::{Dialog, TextView}, CbSink, Cursive, CursiveRunnable};
 use reqwest::Error;
 mod models;
 use models::container::{Containers, Container};
@@ -15,6 +15,20 @@ fn fetch_containers() -> Result<Containers, Error> {
     let response = blocking::get(url)?;
     let containers = response.json::<Containers>()?;
     Ok(containers)
+}
+
+fn update_containers_view(siv: &mut Cursive) {
+    let mut container_rows = Vec::new();
+
+    match fetch_containers() {
+        Ok(containers) => {
+            for container in containers {
+                container_rows.push(container);
+            }
+            siv.call_on_name("containers_table", |table: &mut TableView<Container, ContainerColumn>| table.set_items(container_rows));
+        },
+        Err(e) => eprintln!("Failed to fetch containers: {}", e),
+    }
 }
 
 fn stop_container(container_id: &String) -> Result<(), Error> {
@@ -38,18 +52,6 @@ fn main() {
         .column(ContainerColumn::Id, "Id", |c| c.width_percent(20))
         .column(ContainerColumn::Image, "Image", |c| c.width_percent(20))
         .column(ContainerColumn::Command, "Command", |c| c.align(HAlign::Left));
-    
-    let mut container_rows = Vec::new();
-
-    match fetch_containers() {
-        Ok(containers) => {
-            for container in containers {
-                container_rows.push(container);
-            }
-            table.set_items(container_rows);
-        },
-        Err(e) => eprintln!("Failed to fetch containers: {}", e),
-    }
 
     table.set_on_submit(move |siv: &mut Cursive, row: usize, index: usize| {
         let value = siv
@@ -63,7 +65,7 @@ fn main() {
         siv.add_layer(
             Dialog::around(TextView::new(value))
                 .title(format!("Removing row # {}", row))
-                .button("Close", move |s| {
+                .button("Stop", move |s| {
                     s.call_on_name("containers_table", |table: &mut TableView<Container, ContainerColumn>| {
                         let item = table.borrow_item(index).unwrap();
                         let container_id = item.id.clone();
@@ -75,11 +77,16 @@ fn main() {
                         }
                     });
                     s.pop_layer();
-                }),
+                }
+            ),
         );
     });
-
     siv.add_layer(Dialog::around(table.with_name("containers_table").min_size((50, 20))).title("Containers").full_width());
+    update_containers_view(&mut siv);
+    
+    siv.add_global_callback(Key::F5, |s| {
+        update_containers_view(s)
+    });
     siv.run();
 }
 
