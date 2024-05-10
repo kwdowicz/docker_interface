@@ -1,6 +1,7 @@
 extern crate cursive_table_view;
 
-use cursive::{align::HAlign, views::{Dialog, TextView}, Cursive};
+use reqwest::blocking;
+use cursive::{align::HAlign, views::{Dialog, TextView}, CbSink, Cursive, CursiveRunnable};
 use reqwest::Error;
 mod models;
 use models::container::{Containers, Container};
@@ -8,25 +9,19 @@ use cursive_table_view::{TableViewItem, TableColumn, TableView};
 use cursive::traits::*;
 mod views;
 use views::container::ContainerColumn;
-use tokio::sync::oneshot;
 
-async fn fetch_containers() -> Result<Containers, Error> {
+fn fetch_containers() -> Result<Containers, Error> {
     let url = "http://localhost:2375/containers/json";
-    let containers = reqwest::get(url)
-    .await?
-    .json::<Containers>()
-    .await?;
+    let response = blocking::get(url)?;
+    let containers = response.json::<Containers>()?;
     Ok(containers)
 }
 
-async fn stop_container(container_id: &str) -> Result<(), Error> {
-    let client = reqwest::Client::new();
+fn stop_container(container_id: &String) -> Result<(), Error> {
+    let client = blocking::Client::new();
     let url = format!("http://localhost:2375/containers/{}/stop", container_id);
 
-    let res = client.post(url)
-        .send()
-        .await?;
-
+    let res = client.post(url).send()?;
     if res.status().is_success() {
         println!("Container stopped successfully.");
     } else {
@@ -36,30 +31,27 @@ async fn stop_container(container_id: &str) -> Result<(), Error> {
     Ok(())
 }
 
-#[tokio::main]
-async fn main() {
+fn main() {
     let mut siv = cursive::default();
-    
+
     let mut table = TableView::<Container, ContainerColumn>::new()
         .column(ContainerColumn::Id, "Id", |c| c.width_percent(20))
+        .column(ContainerColumn::Image, "Image", |c| c.width_percent(20))
         .column(ContainerColumn::Command, "Command", |c| c.align(HAlign::Left));
-        
+    
     let mut container_rows = Vec::new();
 
-    match fetch_containers().await {
+    match fetch_containers() {
         Ok(containers) => {
             for container in containers {
-                container_rows.push(
-                    container
-                );
+                container_rows.push(container);
             }
             table.set_items(container_rows);
         },
         Err(e) => eprintln!("Failed to fetch containers: {}", e),
     }
 
-    table.set_on_submit(|siv: &mut Cursive, row: usize, index: usize| {
-        
+    table.set_on_submit(move |siv: &mut Cursive, row: usize, index: usize| {
         let value = siv
             .call_on_name("containers_table", move |table: &mut TableView<Container, ContainerColumn>| {
                 format!("{:?}", table.borrow_item(index).unwrap())
@@ -73,10 +65,14 @@ async fn main() {
                 .title(format!("Removing row # {}", row))
                 .button("Close", move |s| {
                     s.call_on_name("containers_table", |table: &mut TableView<Container, ContainerColumn>| {
-                        // Here I need to call stop_container
-                        // If I get the result that container has stopped I need to update table and display message that
-                        // it was indeed stopped
-                        table.remove_item(index);
+                        let item = table.borrow_item(index).unwrap();
+                        let container_id = item.id.clone();
+                        match stop_container(&container_id.unwrap()) {
+                            Ok(_) => {
+                                table.remove_item(index);
+                            },
+                            Err(e) => eprintln!("Failed to stop container: {}", e),
+                        }
                     });
                     s.pop_layer();
                 }),
@@ -85,5 +81,5 @@ async fn main() {
 
     siv.add_layer(Dialog::around(table.with_name("containers_table").min_size((50, 20))).title("Containers").full_width());
     siv.run();
-
 }
+

@@ -1,0 +1,36 @@
+version: '3.9'
+
+services:
+  alpine:
+    image: alpine
+    container_name: alpine_shell
+    command: tail -f /dev/null # Keeps the container running
+
+  hello-world:
+    image: hello-world
+    container_name: hello_world_test
+
+  busybox:
+    image: busybox
+    container_name: busybox_shell
+    command: tail -f /dev/null # Keeps the container running
+
+  nginx:
+    image: nginx
+    container_name: nginx_web
+    ports:
+      - "8080:80" # Maps port 80 in the container to 8080 on the host
+
+  python:
+    image: python:3.9-alpine
+    container_name: python_alpine
+    command: tail -f /dev/null # Keeps the container running
+
+  postgres:
+    image: postgres:alpine
+    container_name: postgres_db
+    environment:
+      POSTGRES_PASSWORD: mysecretpassword
+    ports:
+      - "5432:5432" # Maps the default Postgres port to the same port on the host
+
