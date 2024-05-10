@@ -1,8 +1,13 @@
+use crate::actions::container::{fetch_containers, stop_container};
 use crate::models::container::Container;
-use cursive::{align::HAlign, views::{Dialog, ResizedView, TextView}, Cursive};
+use cursive::traits::*;
+use cursive::{
+    align::HAlign,
+    views::{Dialog, ResizedView, TextView},
+    Cursive,
+};
 use cursive_table_view::{TableView, TableViewItem};
 use std::cmp::Ordering;
-use cursive::traits::*;
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub enum ContainerColumn {
@@ -44,6 +49,23 @@ impl TableViewItem<ContainerColumn> for Container {
     }
 }
 
+pub fn update_containers_view(siv: &mut Cursive) {
+    let mut container_rows = Vec::new();
+
+    match fetch_containers() {
+        Ok(containers) => {
+            for container in containers {
+                container_rows.push(container);
+            }
+            siv.call_on_name(
+                "containers_table",
+                |table: &mut TableView<Container, ContainerColumn>| table.set_items(container_rows),
+            );
+        }
+        Err(e) => eprintln!("Failed to fetch containers: {}", e),
+    }
+}
+
 pub fn containers_view() -> ResizedView<Dialog> {
     let mut table = TableView::<Container, ContainerColumn>::new()
         .column(ContainerColumn::Id, "Id", |c| c.width_percent(20))
@@ -74,12 +96,12 @@ pub fn containers_view() -> ResizedView<Dialog> {
                         |table: &mut TableView<Container, ContainerColumn>| {
                             let item = table.borrow_item(index).unwrap();
                             let container_id = item.id.clone();
-                            // match stop_container(&container_id.unwrap()) {
-                            //     Ok(_) => {
-                            //         table.remove_item(index);
-                            //     }
-                            //     Err(e) => eprintln!("Failed to stop container: {}", e),
-                            // }
+                            match stop_container(&container_id.unwrap()) {
+                                Ok(_) => {
+                                    table.remove_item(index);
+                                }
+                                Err(e) => eprintln!("Failed to stop container: {}", e),
+                            }
                         },
                     );
                     s.pop_layer();
@@ -88,6 +110,6 @@ pub fn containers_view() -> ResizedView<Dialog> {
     });
 
     Dialog::around(table.with_name("containers_table").min_size((50, 20)))
-            .title("Containers")
-            .full_width()
+        .title("Containers")
+        .full_width()
 }

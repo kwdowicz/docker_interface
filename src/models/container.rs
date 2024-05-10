@@ -1,9 +1,9 @@
-use serde::{Serialize, Deserialize};
+use crate::models::host_config::HostConfig;
 use crate::models::labels::Labels;
 use crate::models::mount::Mount;
-use crate::models::port::Port;
-use crate::models::host_config::HostConfig;
 use crate::models::network_settings::NetworkSettings;
+use crate::models::port::Port;
+use serde::{Deserialize, Serialize};
 
 pub type Containers = Vec<Container>;
 
