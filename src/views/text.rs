@@ -8,7 +8,7 @@ pub enum Text {
 impl Text {
     pub fn text(&self) -> String {
         match self {
-            Self::Info => "(c) Kamil Wdowicz".to_string(),
+            Self::Info => "DockerFace".to_string(),
             Self::Shortcuts => "[F5] Refresh | [Esc] Quit".to_string(),
             Self::BottomBar => format!("{} | {}", Self::Info.text(), Self::Shortcuts.text()),
             Self::AppTitle => "DockerFace".to_string(),

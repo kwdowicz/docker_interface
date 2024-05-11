@@ -66,14 +66,13 @@ fn create_containers_table() -> TableView<Container, ContainerColumn> {
     let table = TableView::<Container, ContainerColumn>::new()
         .column(ContainerColumn::Id, "ID", |c| c.width(13))
         .column(ContainerColumn::Image, "IMAGE", |c| c.width_percent(20))
-        .column(ContainerColumn::Command, "COMMAND", |c| c.width_percent(20))
+        .column(ContainerColumn::Command, "COMMAND", |c| c.width_percent(30))
         .column(ContainerColumn::Name, "NAME", |c| c.width_percent(20));
     table
 }
 
 fn handle_table_submission(siv: &mut Cursive, index: usize) {
-    siv.set_user_data(index); // Store the current index in user data
-
+    siv.set_user_data(index);
     let value = siv
         .call_on_name(
             "containers_table",
