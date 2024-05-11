@@ -3,8 +3,8 @@ mod models;
 mod views;
 
 extern crate cursive_table_view;
-use crate::views::container;
 use crate::views::bars;
+use crate::views::container;
 use cursive::event::Key;
 use views::bars::update_status_bar;
 use views::text::Status;

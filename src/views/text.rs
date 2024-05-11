@@ -21,6 +21,8 @@ pub enum Status {
     Refreshing,
     StoppingContainer,
     NoDocker,
+    ContainerStopped,
+    ErrorStoppingContainer(String),
 }
 
 impl Status {
@@ -30,6 +32,8 @@ impl Status {
             Self::Refreshing => "Refreshing".to_string(),
             Self::StoppingContainer => "Stoping container".to_string(),
             Self::NoDocker => "Docker service unreachable".to_string(),
+            Self::ContainerStopped => "Container stopped".to_string(),
+            Self::ErrorStoppingContainer(e) => format!("Error while stopping container: {}", e),
         }
     }
 }
