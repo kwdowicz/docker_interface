@@ -16,7 +16,7 @@ pub fn stop_container(container_id: &String) -> Result<(), Error> {
 }
 
 pub fn fetch_containers() -> Result<Containers, Error> {
-    let url = "http://localhost:2375/containers/json";
+    let url = "http://localhost:2375/containers/json?all=1";
     let response = blocking::get(url)?;
     let containers = response.json::<Containers>()?;
     Ok(containers)
